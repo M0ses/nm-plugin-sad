@@ -3,9 +3,10 @@ nm-plugin-sad
 
 **A plugin/dispatcher script for NetworkManager for siproxd and dnsmasq**
 
-This tool is a "plugin" for NetworkManager in form of a dispatcher 
-script (located under /etc/NetworkManager/dispatcher.d) which starts 
-siproxy and/or dnsmasq depending on your configurtion.
+This tool is a "plugin" for NetworkManager in form of a dispatcher script 
+(located under /etc/NetworkManager/dispatcher.d) which starts/stops siproxy 
+and/or dnsmasq (depending on your configuration). It listens on "vpn-up" or 
+"vpn-down" requests given by network-manager.
 
 in my case i use it to:
 
@@ -16,3 +17,5 @@ in my case i use it to:
    the VOIP server in my companies network
 
 
+**DEBIAN PACKAGES**
+commits for debian/ubuntu packaging are welcome!
