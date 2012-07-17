@@ -1,7 +1,7 @@
 nm-plugin-sad
 =============
 
-'''A plugin/dispatcher script for NetworkManager for siproxd and dnsmasq'''
+**A plugin/dispatcher script for NetworkManager for siproxd and dnsmasq**
 
 This tool is a "plugin" for NetworkManager in form of a dispatcher 
 script (located under /etc/NetworkManager/dispatcher.d) which starts 
