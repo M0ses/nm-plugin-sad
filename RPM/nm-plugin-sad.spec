@@ -20,7 +20,7 @@ Version:	0.1
 Release:	0
 License:	GPL-3.0
 Summary:	NetworkManager Siproxd & DNSMasq Plugin
-#Url:		
+Url:		https://github.com/M0ses/nm-plugin-sad
 Group:		Productivity/Networking/System
 Source:		%name-%version.tar.gz 
 PreReq:		NetworkManager
@@ -61,3 +61,7 @@ export DEST_DIR=$RPM_BUILD_ROOT
 %doc README.md
 
 %changelog
+* Wed Jul 18 18:26:37 CEST 2012 m0ses@samaxi.de
+- initial version
+
+
