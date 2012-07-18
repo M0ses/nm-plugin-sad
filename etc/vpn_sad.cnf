@@ -1,0 +1,34 @@
+#<general>
+#	VPN_INTERFACE=vpn0
+#</general>
+#
+#<siproxd>
+#	# PID_FILE=/var/run/nm-plugin-sad.siproxd.pid
+#	SIPROXD_CONFIG_TEMPLATE=/opt/nm-plugin-sad/templates/siproxd.conf.tt
+#	SIPROXD_CONFIG_FILE=/tmp/siproxd.conf.nm-plugin-sad
+#	<rc>
+#		PHONE="phone1.example.com"
+#		SIPROXD_IF_INBOUND="eth0"
+#	</rc>
+#</siproxd>
+#
+#<dnsmasq>
+#	# PID_FILE=/var/run/nm-plugin-sad.dnsmasq.pid
+#	DNSMASQ_BIN=/usr/sbin/dnsmasq
+#	DNS_GLOBAL_OPTIONS=" --bind-interfaces --listen-address=127.0.0.1 --no-dhcp-interface=lo --except-interface=virbr0 --except-interface=vnet0 --except-interface=eth0 -R " 
+#</dnsmasq>
+#
+#<vpn>
+#	<WorkVPN>
+#		USE_DNSMASQ=yes
+#		USE_SIPROXD=yes
+#		SERVER=/mywork.com/10.in-addr.arpa./10.0.0.17
+#		SERVER=/mywork.com/10.in-addr.arpa./10.0.0.18
+#	</IsarNet>
+#	<HomeVPN>
+#		USE_DNSMASQ=yes
+#		USE_SIPROXD=no
+#		SERVER=/168.192.in-addr.arpa./192.168.0.17
+#		SERVER=/myhome.com/192.168.0.17
+#	</HomeVPN>
+#</vpn>

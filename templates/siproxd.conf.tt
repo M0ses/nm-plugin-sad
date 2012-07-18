@@ -1,0 +1,24 @@
+if_inbound  = [% IF_INBOUND %]	# inbound interface
+if_outbound = [% VPN_INTERFACE %]	# outbound interface
+sip_listen_port = 5200
+daemonize = 1
+silence_log = 0
+user = siproxd 
+chrootjail = /var/lib/siproxd/
+registration_file = /var/lib/siproxd/siproxd_registrations
+autosave_registrations = 300
+rtp_proxy_enable = 1
+rtp_port_low  = 7070
+rtp_port_high = 7089
+rtp_timeout = 300
+rtp_dscp = 46
+sip_dscp = 0
+rtp_input_dejitter  = 0
+rtp_output_dejitter = 0
+default_expires = 600
+debug_level = -1
+debug_port = 0
+mask_host=[% PHONE %] # mask_host = host to mask (phone ip)
+masked_host=[% VPN_IP %] # masked_host = mask host (phone) as ( ip of outbound interface)
+plugindir=/usr/lib/siproxd/
+load_plugin=plugin_logcall.la

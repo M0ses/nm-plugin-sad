@@ -1,0 +1,300 @@
+#!/usr/bin/env perl
+
+
+use strict;
+use warnings;
+use Config::General;
+use Sys::Syslog qw(:standard :macros);
+use Data::Dumper;
+use FindBin;
+use File::Copy;
+use Template;
+use File::Basename;
+
+openlog("nm-plugin-dns-siproxd",'ndelay,pid,perror',LOG_USER);
+
+my $cFile = "/opt/nm-plugin-sad/etc/vpn_sad.cnf";
+my $rcBackup = "/opt/nm-plugin-sad/tmp/resolv.conf.backup";
+
+
+### Get Arguments
+#
+if (@ARGV < 2 ) {
+	syslog(LOG_CRIT,"Got wrong number of arguments") || print "Error while logging\n";
+	closelog();
+	exit 1;		
+}
+
+my ($interface,$action,$mode) = @ARGV;
+#
+###
+
+###
+# Get config
+if ($mode eq 'test' ) {
+	$cFile="$FindBin::Bin/../etc/vpn_sad.cnf";
+}
+
+syslog(LOG_INFO,"Using config file $cFile");
+my $conf = Config::General->new($cFile);
+my %config = $conf->getall;
+#print Dumper(\%config);
+#
+###
+
+###
+# Checking if action is vpn related
+if ($action !~ /^vpn-(up|down)/ ) {
+	syslog(LOG_INFO,"Action is not for vpn");
+	exit 0;
+}
+
+syslog(LOG_INFO,"Action '$action' called");
+
+#
+###
+
+if ($action eq 'vpn-down') {
+	stop_dns(\%config);
+	stop_sip(\%config);	
+	exit 0;
+}
+
+
+my $connected_vpn=get_connected_vpn();
+
+
+if (! $connected_vpn ) {
+	syslog(LOG_ERR,"Could not get name of connected vpn");
+	exit 2;
+}
+
+if (! $config{vpn}->{$connected_vpn} ) {
+	syslog(LOG_INFO,"no configuration found for vpn '$connected_vpn'");
+	exit 0;
+}
+	
+syslog(LOG_INFO,"Using configuration for vpn '$connected_vpn'");
+
+if (! start_dns(\%config,$config{vpn}->{$connected_vpn}) ) {
+	syslog(LOG_ERR,"Error while starting dnsmasq");
+}
+if (! start_sip(\%config,$config{vpn}->{$connected_vpn}) ) {
+	syslog(LOG_ERR,"Error while starting siproxd");	
+}
+
+exit 0;
+################################################################################
+sub start_sip {
+	my ($config,$vc) = @_;
+	my $tun_ip="";
+
+	if ( $vc->{USE_SIPROXD} !~ /^(y(es)?|1)/ ) {
+		syslog(LOG_INFO,"siproxd not enabled ... Returning ...");
+		return 1;
+	}
+
+	map 
+		{ 
+			if ( $_ =~ /^\s+inet\s+((\d{1,3}\.){3}\d{1,3})/ ) {
+				$tun_ip=$1 
+			}
+		} 
+		`LANG=C ip -f inet addr show $interface`
+	;
+
+	if (! $tun_ip ) {
+		syslog(LOG_ERR,"Cannot determine ip for interface '$interface'");
+		return 0;
+	}
+
+	syslog(LOG_INFO,"tun_ip: $tun_ip");
+
+	my $tFile = $config->{siproxd}->{SIPROXD_CONFIG_TEMPLATE};
+	my $tcFile = $config->{siproxd}->{SIPROXD_CONFIG_FILE};
+	my $bin = $config->{siproxd}->{SIPROXD_BIN} || "/usr/sbin/siproxd";
+	my $pid_file = get_pid_file_name($config,'siproxd');
+
+	if (! -x $bin ) {
+		syslog(
+			LOG_ERR,
+			"Could not found siproxd binary under $bin
+Please check variable 'SIPROXD_BIN' under section 'siproxd' in config file '$cFile'
+			"
+		);
+		return 0;
+	}
+
+	my $ttPath=dirname($tFile);
+	my $ttIn=basename($tFile);
+
+	my $tt = Template->new({
+               INCLUDE_PATH => $ttPath,
+               EVAL_PERL    => 1,
+        }) || die $Template::ERROR, "\n";
+
+	my %vars = %{$config->{siproxd}->{rc}};
+	$vars{VPN_INTERFACE}=$interface;
+	$vars{VPN_IP} = $tun_ip;
+
+	$tt->process($ttIn,\%vars,$tcFile);
+	
+
+	my $cmd = "$bin --pid-file $pid_file -c $tcFile";
+	syslog(LOG_INFO,"Using command '$cmd'");
+	`$cmd` if ($mode ne 'test');
+
+	return 1;
+		
+}
+################################################################################
+sub start_dns {
+	my ($config,$vc) = @_;
+
+	if ( $vc->{USE_DNSMASQ} !~ /^(y(es)?|1)/ ) {
+		syslog(LOG_INFO,"dnsmasq not enabled ... Returning ...");
+		return 1;
+	}
+
+	my $bin = $config->{dnsmasq}->{DNSMASQ_BIN} || "/usr/sbin/dnsmasq";
+	my $opt = $config->{dnsmasq}->{DNS_GLOBAL_OPTIONS};
+	my $pid_file = get_pid_file_name($config,'dnsmasq');
+	
+	if (! -x $bin ) {
+		syslog(
+			LOG_ERR,
+			"Could not found dnsmasq binary under $bin
+Please check DNSMASQ_BIN in section dnsmasq in config file $cFile
+			"
+		);
+		return 0;
+	}
+
+	$opt .= get_server_string($vc->{SERVER});
+	
+	my $rsc = get_resolvconf();
+
+	foreach my $ns (@{$rsc->{nameserver}}) {
+		$opt .= " --server=$ns "
+	}
+
+	syslog(LOG_INFO,Dumper($rsc));
+
+	my $cmd = "$bin $opt -x $pid_file";
+	syslog(LOG_DEBUG,"Starting command '$cmd'");
+
+	`$cmd` if $mode ne 'test';
+
+	set_resolvconf() if ! $?;
+
+	return 1;
+}
+################################################################################
+sub get_resolvconf {
+	my $res={};
+	open(RSC,"/etc/resolv.conf");
+	my @content=<RSC>;
+
+	foreach my $line (@content) {
+		my ($text,$comment)=split(/#/,$line);
+		if ($text =~ /^\s*(nameserver|search)\s+(.*)/ ) {
+			if ($1 eq 'search') {
+				$res->{$1}=$2 
+			} else {
+				 $res->{$1} = ( ref($res->{$1}) eq 'ARRAY' ) 
+					? $res->{$1}
+					: [] ;
+				push(@{$res->{$1}},$2);
+			}
+		}
+	}
+	close RSC;
+	return $res
+}
+################################################################################
+sub set_resolvconf {
+	my $rcFile = "/etc/resolv.conf";
+	open(RSC,"< $rcFile") || die "Could not open $rcFile\n";
+	my @content=<RSC>;
+	close RSC;
+	my $c1=0;
+
+	copy($rcFile,$rcBackup) or die "Could not backup $rcFile\n";
+
+	open(RSC,"> $rcFile");
+	foreach my $line (@content) {
+		my ($text,$comment)=split(/#/,$line);
+		my $nstxt;
+		if ($text =~ /^\s*nameserver/ ) {
+			next if $c1;
+			$nstxt = "nameserver 127.0.0.1\n";
+			$c1++;
+		} else {
+			$nstxt = $line;
+		}
+		syslog(LOG_INFO,"Writing to resolv.conf: '$nstxt'");
+		print RSC $nstxt;
+	}
+
+	close RSC;
+}
+################################################################################
+sub stop_sip {
+	my ($config) = @_;
+	my $pid_file = get_pid_file_name($config,'siproxd');
+	stop_pid($pid_file);
+	my $tcFile = $config->{siproxd}->{SIPROXD_CONFIG_FILE};
+	-e $tcFile && unlink $tcFile;
+	return 1;
+}
+sub stop_dns {
+	my ($config) = @_;
+	my $rcFile = "/etc/resolv.conf";
+	my $pid_file = get_pid_file_name($config,'dnsmasq');
+	stop_pid($pid_file);
+	copy($rcBackup,$rcFile) or syslog(LOG_ERR,"Could not restore $rcFile"); 
+}
+sub get_pid_file_name {
+	my ($config,$section) = @_;
+	my $default_file="/var/run/nm-plugin-sad.$section.pid";
+
+	if ( ref($config->{$section}) ne 'HASH' ) {
+		syslog(LOG_ERR,"Error in config file '$cFile' \$config->{$section} is not a HASH ref");
+		return $default_file;
+	}
+
+	return $config->{$section}->{'PID_FILE'} || $default_file;
+}
+sub stop_pid {
+	my $pid_file = shift;
+        if ( -f $pid_file ) {
+		open(PIDFILE,$pid_file);
+		my $pid = <PIDFILE>;
+		close PIDFILE;
+	
+                kill(15,$pid);
+		unlink($pid_file);
+	}
+
+}
+
+sub get_server_string {
+
+	my $cServ = shift;
+	my $st="";
+
+	return $cServ if (ref ($cServ) eq '');
+	
+	map {  $st .= " --server=$_ " } @{$cServ};
+	
+	return $st
+
+}
+sub get_connected_vpn {
+	my @out=`LANG=C nmcli -t -f NAME,VPN con status`;
+	foreach (@out){
+		chomp;
+		my ($name,$state)=split(/:/,$_);
+		return $name if $state eq 'yes';
+	}
+}
