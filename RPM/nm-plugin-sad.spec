@@ -18,16 +18,16 @@
 Name:           nm-plugin-sad
 Version:	0.1
 Release:	0
-License:	GPL
+License:	GPL-3.0
 Summary:	NetworkManager Siproxd & DNSMasq Plugin
 #Url:		
 Group:		Productivity/Networking/System
 Source:		%name-%version.tar.gz 
-#Patch:
-#BuildRequires:
 PreReq:		NetworkManager
-#Provides:
+Requires:	perl(Template::Toolkit)
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+BuildArch:      noarch
+
 
 %description
 This packages provides a plugin in form of a dispatcher script for 
