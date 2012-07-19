@@ -19,3 +19,10 @@ in my case i use it to:
 
 **DEBIAN PACKAGES**
 commits for debian/ubuntu packaging are welcome!
+
+**Known Issues**
+
+* If vpn is not shut down correctly, the settings in your /etc/resolv.conf might
+  be broken, as Networkmanager doesn`t touch a modified file. In this case just 
+  delete /etc/resolv.conf an reconnect your network (Lan/Wan/WLAN etc.) to 
+  recreate your /etc/resolv.conf
