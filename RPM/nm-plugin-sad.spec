@@ -24,7 +24,11 @@ Summary:	NetworkManager Siproxd & DNSMasq Plugin
 Group:		Productivity/Networking/System
 Source:		%name-%version.tar.gz 
 PreReq:		NetworkManager
+
 Requires:	perl(Template::Toolkit)
+Requires: dnsmasq
+Requires: siproxd
+
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
