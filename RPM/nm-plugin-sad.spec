@@ -26,6 +26,7 @@ Source:		%name-%version.tar.gz
 PreReq:		NetworkManager
 
 Requires:	perl(Template::Toolkit)
+Requires:	perl(Config::General)
 Requires: dnsmasq
 Requires: siproxd
 
@@ -44,7 +45,7 @@ VPN Connection is started
 %build
 
 %install
-export DEST_DIR=$RPM_BUILD_ROOT
+export DESTDIR=$RPM_BUILD_ROOT
 %make_install
 
 %post
