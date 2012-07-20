@@ -66,7 +66,7 @@ export DESTDIR=$RPM_BUILD_ROOT
 %doc README.md
 
 %changelog
-* Wed Jul 18 18:26:37 CEST 2012 m0ses@samaxi.de
+* Wed Jul 18 2012 m0ses@samaxi.de
 - initial version
 
 
