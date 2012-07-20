@@ -1,0 +1,19 @@
+Source: nm-plugin-sad
+Section: net
+Priority: extra
+Maintainer: M0ses <m0ses@samaxi.de>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+Homepage: https://github.com/M0ses/nm-plugin-sad
+Vcs-Git: git://github.com/M0ses/nm-plugin-sad.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/nm-plugin-sad.git;a=summary
+
+
+Package: nm-plugin-sad
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libtemplate-perl, dnsmasq, siproxd, libconfig-general-perl
+Description: A plugin/dispatcher script for NetworkManager for siproxd and dnsmasq
+ This tool is a "plugin" for NetworkManager in form of a dispatcher script 
+ (located under /etc/NetworkManager/dispatcher.d) which starts/stops siproxy 
+ and/or dnsmasq (depending on your configuration). It listens on "vpn-up" or 
+ "vpn-down" requests given by network-manager.

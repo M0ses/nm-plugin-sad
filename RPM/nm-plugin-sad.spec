@@ -17,14 +17,19 @@
 
 Name:           nm-plugin-sad
 Version:	0.1
-Release:	0
+Release:	1
 License:	GPL-3.0
 Summary:	NetworkManager Siproxd & DNSMasq Plugin
 Url:		https://github.com/M0ses/nm-plugin-sad
 Group:		Productivity/Networking/System
 Source:		%name-%version.tar.gz 
 PreReq:		NetworkManager
+
 Requires:	perl(Template::Toolkit)
+Requires:	perl(Config::General)
+Requires: dnsmasq
+Requires: siproxd
+
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 
@@ -40,7 +45,7 @@ VPN Connection is started
 %build
 
 %install
-export DEST_DIR=$RPM_BUILD_ROOT
+export DESTDIR=$RPM_BUILD_ROOT
 %make_install
 
 %post
