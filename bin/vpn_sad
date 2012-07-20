@@ -31,7 +31,7 @@ my ($interface,$action,$mode) = @ARGV;
 
 ###
 # Get config
-if ($mode eq 'test' ) {
+if (defined($mode) && $mode eq 'test' ) {
 	$cFile="$FindBin::Bin/../etc/vpn_sad.cnf";
 }
 
