@@ -17,7 +17,7 @@
 
 Name:           nm-plugin-sad
 Version:	0.1
-Release:	1
+Release:	2
 License:	GPL-3.0
 Summary:	NetworkManager Siproxd & DNSMasq Plugin
 Url:		https://github.com/M0ses/nm-plugin-sad

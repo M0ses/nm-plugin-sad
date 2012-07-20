@@ -1,5 +1,5 @@
-if_inbound  = [% IF_INBOUND %]	# inbound interface
-if_outbound = [% VPN_INTERFACE %]	# outbound interface
+if_inbound  = [% IF_INBOUND %]
+if_outbound = [% VPN_INTERFACE %]
 sip_listen_port = 5200
 daemonize = 1
 silence_log = 0
@@ -18,7 +18,9 @@ rtp_output_dejitter = 0
 default_expires = 600
 debug_level = -1
 debug_port = 0
-mask_host=[% PHONE %] # mask_host = host to mask (phone ip)
-masked_host=[% VPN_IP %] # masked_host = mask host (phone) as ( ip of outbound interface)
+# mask_host = host to mask (phone ip)
+mask_host=[% PHONE %]
+# masked_host = mask host (phone) as ( ip of outbound interface)
+masked_host=[% VPN_IP %]
 plugindir=/usr/lib/siproxd/
 load_plugin=plugin_logcall.la
