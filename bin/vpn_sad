@@ -14,8 +14,6 @@ use File::Basename;
 openlog("nm-plugin-dns-siproxd",'ndelay,pid,perror',LOG_USER);
 
 my $cFile = "/opt/nm-plugin-sad/etc/vpn_sad.cnf";
-my $rcBackup = "/opt/nm-plugin-sad/tmp/resolv.conf.backup";
-
 
 ### Get Arguments
 #
@@ -157,7 +155,8 @@ sub start_dns {
 	}
 
 	my $bin = $config->{dnsmasq}->{DNSMASQ_BIN} || "/usr/sbin/dnsmasq";
-	my $opt = $config->{dnsmasq}->{DNS_GLOBAL_OPTIONS};
+	my $local_dns_ip = $config->{dnsmasq}->{DNS_LOCAL_IP} || '127.0.2.1';
+	my $opt = $config->{dnsmasq}->{DNS_GLOBAL_OPTIONS} . "--listen-address=$local_dns_ip";
 	my $pid_file = get_pid_file_name($config,'dnsmasq');
 	
 	if (! -x $bin ) {
@@ -185,7 +184,7 @@ Please check DNSMASQ_BIN in section dnsmasq in config file $cFile
 
 	`$cmd` if $mode ne 'test';
 
-	set_resolvconf() if ! $?;
+	set_resolvconf($local_dns_ip) if ! $?;
 
 	return 1;
 }
@@ -213,13 +212,12 @@ sub get_resolvconf {
 }
 ################################################################################
 sub set_resolvconf {
+	my $local_dns_ip = shift;
 	my $rcFile = "/etc/resolv.conf";
 	open(RSC,"< $rcFile") || die "Could not open $rcFile\n";
 	my @content=<RSC>;
 	close RSC;
 	my $c1=0;
-
-	copy($rcFile,$rcBackup) or die "Could not backup $rcFile\n";
 
 	open(RSC,"> $rcFile");
 	foreach my $line (@content) {
@@ -227,7 +225,7 @@ sub set_resolvconf {
 		my $nstxt;
 		if ($text =~ /^\s*nameserver/ ) {
 			next if $c1;
-			$nstxt = "nameserver 127.0.0.1\n";
+			$nstxt = "nameserver $local_dns_ip\n";
 			$c1++;
 		} else {
 			$nstxt = $line;
@@ -252,7 +250,6 @@ sub stop_dns {
 	my $rcFile = "/etc/resolv.conf";
 	my $pid_file = get_pid_file_name($config,'dnsmasq');
 	stop_pid($pid_file);
-	copy($rcBackup,$rcFile) or syslog(LOG_ERR,"Could not restore $rcFile"); 
 }
 sub get_pid_file_name {
 	my ($config,$section) = @_;
