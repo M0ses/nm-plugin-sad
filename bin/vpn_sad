@@ -24,6 +24,7 @@ if (@ARGV < 2 ) {
 }
 
 my ($interface,$action,$mode) = @ARGV;
+$mode = $mode || '';
 #
 ###
 
@@ -156,7 +157,7 @@ sub start_dns {
 
 	my $bin = $config->{dnsmasq}->{DNSMASQ_BIN} || "/usr/sbin/dnsmasq";
 	my $local_dns_ip = $config->{dnsmasq}->{DNS_LOCAL_IP} || '127.0.2.1';
-	my $opt = $config->{dnsmasq}->{DNS_GLOBAL_OPTIONS} . "--listen-address=$local_dns_ip";
+	my $opt = $config->{dnsmasq}->{DNS_GLOBAL_OPTIONS} . " --listen-address=$local_dns_ip ";
 	my $pid_file = get_pid_file_name($config,'dnsmasq');
 	
 	if (! -x $bin ) {
@@ -171,7 +172,7 @@ Please check DNSMASQ_BIN in section dnsmasq in config file $cFile
 
 	$opt .= get_server_string($vc->{SERVER});
 	
-	my $rsc = get_resolvconf();
+	my $rsc = get_resolvconf($vc->{SERVER});
 
 	foreach my $ns (@{$rsc->{nameserver}}) {
 		$opt .= " --server=$ns "
@@ -190,6 +191,16 @@ Please check DNSMASQ_BIN in section dnsmasq in config file $cFile
 }
 ################################################################################
 sub get_resolvconf {
+	my $vcServer=shift;
+
+	my $vcs = (ref($vcServer) eq 'ARRAY') ? $vcServer : [$vcServer];
+	my @discardNS = map {
+		my @res = split(/\//,$_); 
+		pop(@res); 
+	} @{$vcs};
+
+	syslog(LOG_DEBUG,"\@discardNS: '@discardNS'");
+
 	my $res={};
 	open(RSC,"/etc/resolv.conf");
 	my @content=<RSC>;
@@ -203,7 +214,7 @@ sub get_resolvconf {
 				 $res->{$1} = ( ref($res->{$1}) eq 'ARRAY' ) 
 					? $res->{$1}
 					: [] ;
-				push(@{$res->{$1}},$2);
+				push(@{$res->{$1}},$2) unless ( $2 ~~ @discardNS );
 			}
 		}
 	}
@@ -280,7 +291,7 @@ sub get_server_string {
 	my $cServ = shift;
 	my $st="";
 
-	return $cServ if (ref ($cServ) eq '');
+	return " --server=$cServ " if (ref ($cServ) eq '');
 	
 	map {  $st .= " --server=$_ " } @{$cServ};
 	
