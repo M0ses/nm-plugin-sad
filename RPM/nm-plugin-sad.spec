@@ -16,8 +16,8 @@
 #
 
 Name:           nm-plugin-sad
-Version:	0.1
-Release:	2
+Version:	0.2
+Release:	3
 License:	GPL-3.0
 Summary:	NetworkManager Siproxd & DNSMasq Plugin
 Url:		https://github.com/M0ses/nm-plugin-sad
@@ -40,7 +40,7 @@ NetworkManager which starts dnsmasq and/or siproxd if a specific
 VPN Connection is started
 
 %prep
-%setup -q 
+%setup -q -n %{name}
 
 %build
 

@@ -10,7 +10,8 @@ use FindBin;
 use File::Copy;
 use Template;
 use File::Basename;
-
+use Path::Class::File;
+use Path::Class::Dir;
 openlog("nm-plugin-dns-siproxd",'ndelay,pid,perror',LOG_USER);
 
 my $cFile = "/opt/nm-plugin-sad/etc/vpn_sad.cnf";
@@ -259,8 +260,38 @@ sub stop_sip {
 sub stop_dns {
 	my ($config) = @_;
 	my $rcFile = "/etc/resolv.conf";
+
+	syslog(LOG_DEBUG,"Stopping DNS");
 	my $pid_file = get_pid_file_name($config,'dnsmasq');
 	stop_pid($pid_file);
+	
+	if ( getSuseVersion() >= 12.3 ) {
+		syslog(LOG_DEBUG,"Calling 'netconfig update -f'");
+		system("/sbin/netconfig update -f");
+		cleanupResolvConfBackups();
+	}
+}
+sub cleanupResolvConfBackups {
+	my $etc = Path::Class::Dir->new('/etc');
+	foreach my $file ($etc->children) {
+		if ( 
+			$file =~ /\/?resolv\.conf\.\d{8}-\d{6}$/ &&
+			-f $file
+		) {
+			unlink($file);
+		}
+	}
+}
+sub getSuseVersion {
+	my $srf = Path::Class::File->new("etc","SuSE-release");
+	my $sv=0;
+	eval {
+		my @srfC = $srf->slurp;
+		map { /^VERSION\s*=\s*([0-9\.]*)\s*/ && { $sv = $1 } } @srfC;
+		
+	};
+	syslog(LOG_DEBUG,"Got SuSE version $sv");
+	return $sv;
 }
 sub get_pid_file_name {
 	my ($config,$section) = @_;

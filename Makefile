@@ -4,7 +4,7 @@ RPM_VERSION	:= $(shell [ -f ${SPEC_FILE} ] && sed -ne "s/^Version:\s\+\(.*\)/\1/
 RPM_RELEASE	:= $(shell [ -f ${SPEC_FILE} ] && sed -ne "s/^Release:\s\+\(.*\)/\1/p" < ${SPEC_FILE} )
 RPM_NAME 	:= $(shell [ -f ${SPEC_FILE} ] && sed -ne "s/^Name:\s\+\(.*\)/\1/p" < ${SPEC_FILE} )
 SRC_DIR		:= $(shell basename `pwd`)
-TAR_FILE:=/usr/src/packages/SOURCES/${RPM_NAME}-${RPM_VERSION}.tar.gz
+TAR_FILE:=$(HOME)/rpmbuild/SOURCES/${RPM_NAME}-${RPM_VERSION}.tar.gz
 TAR_EXCLUDE=--exclude=.*.sw? --exclude=*~ --exclude=RPM --exclude=.git --exclude=.osc
 
 
