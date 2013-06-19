@@ -1,3 +1,9 @@
+nm-plugin-sad (0.2) unstable; urgency=low
+
+  * New version with handling for SuSE 12.3 resolv.conf problem
+
+ -- Frank Schreiner <fschreiner@ubuntu1304>  Tue, 18 Jun 2013 15:33:29 +0200
+
 nm-plugin-sad (0.1) unstable; urgency=low
 
   * Initial Release.
