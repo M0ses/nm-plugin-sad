@@ -75,7 +75,7 @@ if (! $config{vpn}->{$connected_vpn} ) {
 }
 	
 syslog(LOG_INFO,"Using configuration for vpn '$connected_vpn'");
-
+system("service atd status || service atd start");
 if (! start_dns(\%config,$config{vpn}->{$connected_vpn}) ) {
 	syslog(LOG_ERR,"Error while starting dnsmasq");
 }
@@ -142,7 +142,7 @@ Please check variable 'SIPROXD_BIN' under section 'siproxd' in config file '$cFi
 
 	my $cmd = "$bin --pid-file $pid_file -c $tcFile";
 	syslog(LOG_INFO,"Using command '$cmd'");
-	`$cmd` if ($mode ne 'test');
+	`echo $cmd |at now` if ($mode ne 'test');
 
 	return 1;
 		
@@ -183,8 +183,9 @@ Please check DNSMASQ_BIN in section dnsmasq in config file $cFile
 
 	my $cmd = "$bin $opt -x $pid_file";
 	syslog(LOG_DEBUG,"Starting command '$cmd'");
-
-	`$cmd` if $mode ne 'test';
+	# looks quite nasty, but i found no other way
+	# otherwise nm-dispatcher would kill dnsmasq
+	`echo $cmd | at now` if $mode ne 'test';
 
 	set_resolvconf($local_dns_ip) if ! $?;
 
@@ -225,14 +226,11 @@ sub get_resolvconf {
 ################################################################################
 sub set_resolvconf {
 	my $local_dns_ip = shift;
-	my $rcFile = "/etc/resolv.conf";
-	open(RSC,"< $rcFile") || die "Could not open $rcFile\n";
-	my @content=<RSC>;
-	close RSC;
-	my $c1=0;
+	my $resolv_conf = Path::Class::File->new("/etc/resolv.conf");
+	my @content = ();
 
-	open(RSC,"> $rcFile");
-	foreach my $line (@content) {
+	my $c1=0;
+	foreach my $line ($resolv_conf->slurp) {
 		my ($text,$comment)=split(/#/,$line);
 		my $nstxt;
 		if ($text =~ /^\s*nameserver/ ) {
@@ -243,10 +241,9 @@ sub set_resolvconf {
 			$nstxt = $line;
 		}
 		syslog(LOG_INFO,"Writing to resolv.conf: '$nstxt'");
-		print RSC $nstxt;
+		push(@content,$nstxt);
 	}
-
-	close RSC;
+	$resolv_conf->spew(iomode => '>:raw',\@content);
 }
 ################################################################################
 sub stop_sip {
@@ -267,8 +264,8 @@ sub stop_dns {
 	
 	if ( getSuseVersion() >= 12.3 ) {
 		syslog(LOG_DEBUG,"Calling 'netconfig update -f'");
+		unlink("/etc/resolv.conf");
 		system("/sbin/netconfig update -f");
-		cleanupResolvConfBackups();
 	}
 }
 sub cleanupResolvConfBackups {
@@ -310,7 +307,7 @@ sub stop_pid {
 		open(PIDFILE,$pid_file);
 		my $pid = <PIDFILE>;
 		close PIDFILE;
-	
+		syslog(LOG_DEBUG,"Killing $pid");	
                 kill(15,$pid);
 		unlink($pid_file);
 	}
