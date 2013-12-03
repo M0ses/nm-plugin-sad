@@ -73,9 +73,9 @@ if (! $config{vpn}->{$connected_vpn} ) {
 	syslog(LOG_INFO,"no configuration found for vpn '$connected_vpn'");
 	exit 0;
 }
-	
+
 syslog(LOG_INFO,"Using configuration for vpn '$connected_vpn'");
-system("service atd status || service atd start");
+
 if (! start_dns(\%config,$config{vpn}->{$connected_vpn}) ) {
 	syslog(LOG_ERR,"Error while starting dnsmasq");
 }
@@ -180,12 +180,20 @@ Please check DNSMASQ_BIN in section dnsmasq in config file $cFile
 	}
 
 	syslog(LOG_INFO,Dumper($rsc));
-
-	my $cmd = "$bin $opt -x $pid_file";
+    my $cmd_template="%s";
+    my $run_atd=0;
+    if (getSuseVersion() >= 13.1 ) {
+        $cmd_template = "echo \"%s\" | at now";
+        $run_atd=1;
+    }
+	my $cmd = sprintf($cmd_template,"$bin $opt -x $pid_file");
 	syslog(LOG_DEBUG,"Starting command '$cmd'");
 	# looks quite nasty, but i found no other way
 	# otherwise nm-dispatcher would kill dnsmasq
-	`echo $cmd | at now` if $mode ne 'test';
+	`$cmd` if $mode ne 'test';
+    if ( $run_atd ) {
+        system("/usr/sbin/atd -s");
+    }
 
 	set_resolvconf($local_dns_ip) if ! $?;
 
