@@ -20,7 +20,7 @@
 #</dnsmasq>
 #
 #<vpn>
-#	<WorkVPN>
+#	<WORKVPN>
 #		USE_DNSMASQ=yes
 #		USE_SIPROXD=yes
 #		SERVER=/mywork.com/10.in-addr.arpa./10.0.0.17
