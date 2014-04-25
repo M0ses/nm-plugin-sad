@@ -11,7 +11,7 @@ Vcs-Git: git://github.com/M0ses/nm-plugin-sad.git
 
 Package: nm-plugin-sad
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libtemplate-perl, dnsmasq, siproxd, libconfig-general-perl
+Depends: ${shlibs:Depends}, ${misc:Depends}, libtemplate-perl, dnsmasq, siproxd, libconfig-general-perl, libpath-class-perl
 Description: A plugin/dispatcher script for NetworkManager for siproxd and dnsmasq
  This tool is a "plugin" for NetworkManager in form of a dispatcher script 
  (located under /etc/NetworkManager/dispatcher.d) which starts/stops siproxy 
