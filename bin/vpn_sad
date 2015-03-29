@@ -335,7 +335,7 @@ sub get_server_string {
 
 }
 sub get_connected_vpn {
-	my @out=`LANG=C nmcli -t -f NAME,VPN con status`;
+	my @out=`LANG=C nmcli -t -f NAME,TYPE con show`;
 	foreach (@out){
 		chomp;
 		my ($name,$state)=split(/:/,$_);

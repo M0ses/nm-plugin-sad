@@ -1,8 +1,15 @@
+nm-plugin-sad (0.3) unstable; urgency=low
+
+  * changes for new nmcli command line options
+  * 
+
+ -- Frank Schreiner <m0ses@samaxi.de>  Tue, 24 Mar 2015 07:36:19 +0100
+
 nm-plugin-sad (0.2) unstable; urgency=low
 
   * New version with handling for SuSE 12.3 resolv.conf problem
 
- -- Frank Schreiner <fschreiner@ubuntu1304>  Tue, 18 Jun 2013 15:33:29 +0200
+ -- Frank Schreiner <m0ses@samaxi.de>  Tue, 18 Jun 2013 15:33:29 +0200
 
 nm-plugin-sad (0.1) unstable; urgency=low
 
